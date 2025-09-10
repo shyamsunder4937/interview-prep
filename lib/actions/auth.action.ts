@@ -2,7 +2,6 @@
 
 import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 // Session duration (1 week)
 const SESSION_DURATION = 60 * 60 * 24 * 7;
@@ -79,26 +78,9 @@ export async function signIn(params: SignInParams) {
         message: "User does not exist. Create an account.",
       };
 
-    // Ensure session cookie is set before returning
     await setSessionCookie(idToken);
-    
-    // Verify the session was created successfully
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session")?.value;
-    
-    if (!sessionCookie) {
-      return {
-        success: false,
-        message: "Failed to create session. Please try again.",
-      };
-    }
-    
-    return {
-      success: true,
-      message: "Signed in successfully.",
-    };
   } catch (error: any) {
-    console.error("Sign in error:", error);
+    console.log("");
 
     return {
       success: false,
@@ -107,15 +89,33 @@ export async function signIn(params: SignInParams) {
   }
 }
 
-// Server action that handles sign in and redirect
+// Sign in and redirect user
 export async function signInAndRedirect(params: SignInParams) {
-  const result = await signIn(params);
-  
-  if (result.success) {
-    redirect("/");
+  const { email, idToken } = params;
+
+  try {
+    const userRecord = await auth.getUserByEmail(email);
+    if (!userRecord)
+      return {
+        success: false,
+        message: "User does not exist. Create an account.",
+      };
+
+    await setSessionCookie(idToken);
+
+    // Redirect will be handled client-side
+    return {
+      success: true,
+      message: "Signed in successfully.",
+    };
+  } catch (error: any) {
+    console.log(error);
+
+    return {
+      success: false,
+      message: "Failed to log into account. Please try again.",
+    };
   }
-  
-  return result;
 }
 
 // Sign out user by clearing the session cookie
