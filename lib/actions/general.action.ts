@@ -1,4 +1,14 @@
-import { db } from "@/constants/firebase/admin";
+"use server";
+
+import 'firebase-admin';
+
+let db: any;
+try {
+  const { getFirestore } = require('firebase-admin/firestore');
+  db = getFirestore();
+} catch (error) {
+  console.error('Failed to initialize Firestore:', error);
+}
 
 interface CreateFeedbackParams {
   interviewId: string;
@@ -28,7 +38,7 @@ export const createFeedback = async ({
       transcript,
       createdAt: new Date(),
       updatedAt: new Date(),
-    }, { merge: true });
+    });
 
     return { 
       success: true, 
